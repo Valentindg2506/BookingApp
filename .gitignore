@@ -1,0 +1,119 @@
+# ============================================================
+#  BookingApp — .gitignore
+# ============================================================
+
+# ------------------------------------------------------------
+#  CREDENCIALES Y CONFIGURACIÓN SENSIBLE — NUNCA subir esto
+# ------------------------------------------------------------
+config.php
+google_tokens.json
+.env
+.env.local
+.env.production
+
+# ------------------------------------------------------------
+#  LOGS Y ARCHIVOS GENERADOS EN TIEMPO DE EJECUCIÓN
+# ------------------------------------------------------------
+webhook_log.txt
+*.log
+/logs/
+/tmp/
+
+# ------------------------------------------------------------
+#  DEPENDENCIAS (si en el futuro se añaden)
+# ------------------------------------------------------------
+/vendor/
+composer.lock
+
+# ------------------------------------------------------------
+#  SISTEMA OPERATIVO
+# ------------------------------------------------------------
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ------------------------------------------------------------
+#  EDITORES E IDEs
+# ------------------------------------------------------------
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains (PhpStorm, IntelliJ…)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim / Neovim
+*.swp
+*.swo
+*~
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ------------------------------------------------------------
+#  PHP
+# ------------------------------------------------------------
+*.cache
+/cache/
+/storage/
+
+# ------------------------------------------------------------
+#  ARCHIVOS DE BACKUP
+# ------------------------------------------------------------
+*.bak
+*.backup
+*.old
+*.orig
+*.sql.gz
+*.sql.zip
+
+# ------------------------------------------------------------
+#  UPLOADS / MEDIA (si se añaden en el futuro)
+# ------------------------------------------------------------
+/uploads/
+/media/
+
+# ------------------------------------------------------------
+#  CERTIFICADOS Y CLAVES
+# ------------------------------------------------------------
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
