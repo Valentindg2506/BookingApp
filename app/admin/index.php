@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a237e 0%, #1565c0 100%);
+            background: linear-gradient(135deg, #1b3a2d 0%, #2d6a4f 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -78,21 +78,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .logo-icon {
             width: 64px; height: 64px;
-            background: linear-gradient(135deg, #1a237e, #1565c0);
+            background: linear-gradient(135deg, #1b3a2d, #2d6a4f);
             border-radius: 16px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 12px;
         }
-        .logo h1 { font-size: 1.4rem; font-weight: 700; color: #1a237e; }
+        .logo h1 { font-size: 1.4rem; font-weight: 700; color: #1b3a2d; }
         .logo p  { font-size: .82rem; color: #90a4ae; margin-top: 4px; }
         .field { margin-bottom: 16px; }
         .field label { display: block; font-size: .8rem; font-weight: 600; color: #607d8b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
         .field input {
             width: 100%;
             padding: 13px 16px;
-            border: 2px solid #dde8f5;
+            border: 2px solid #e2ddd5;
             border-radius: 10px;
             font-size: .95rem;
             font-family: inherit;
@@ -100,11 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             outline: none;
             transition: border-color .2s;
         }
-        .field input:focus { border-color: #1565c0; }
+        .field input:focus { border-color: #2d6a4f; }
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #1a237e, #1565c0);
+            background: linear-gradient(135deg, #1b3a2d, #2d6a4f);
             color: #fff;
             border: none;
             border-radius: 10px;
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-login:hover { opacity: .88; }
         .alert { background: #fdecea; border-left: 4px solid #e53935; border-radius: 8px; padding: 12px 16px; font-size: .85rem; color: #b71c1c; margin-bottom: 20px; }
         .back-link { display: block; text-align: center; margin-top: 20px; font-size: .82rem; color: #90a4ae; text-decoration: none; }
-        .back-link:hover { color: #1565c0; }
+        .back-link:hover { color: #2d6a4f; }
     </style>
 </head>
 <body>

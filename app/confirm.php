@@ -1,50 +1,85 @@
 <?php
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . "/config.php";
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/includes/helpers.php";
 
 session_name(SESSION_NAME);
 session_start();
 
-$id    = (int)($_GET['id']    ?? 0);
-$token = sanitize($_GET['token'] ?? '');
+$id = (int) ($_GET["id"] ?? 0);
+$token = sanitize($_GET["token"] ?? "");
 
 // Verificar token de sesión
-if ($id <= 0 || empty($token) || ($_SESSION['booking_' . $id] ?? '') !== $token) {
-    redirect(APP_URL . '/index.php');
+if (
+    $id <= 0 ||
+    empty($token) ||
+    ($_SESSION["booking_" . $id] ?? "") !== $token
+) {
+    redirect(APP_URL . "/index.php");
 }
 
 // Cargar datos de la cita
-$pdo  = Database::getInstance()->getConnection();
+$pdo = Database::getInstance()->getConnection();
 $stmt = $pdo->prepare(
-    "SELECT * FROM appointments WHERE id = :id AND status != 'cancelled' LIMIT 1"
+    "SELECT * FROM appointments WHERE id = :id AND status != 'cancelled' LIMIT 1",
 );
-$stmt->execute([':id' => $id]);
+$stmt->execute([":id" => $id]);
 $appt = $stmt->fetch();
 
 if (!$appt) {
-    redirect(APP_URL . '/index.php');
+    redirect(APP_URL . "/index.php");
 }
 
 // Construir datos para Google Calendar add-to-calendar
-$gcTitle     = urlencode('Reunión con ' . BUSINESS_NAME);
-$gcStart     = str_replace(['-', ':', ' '], '', $appt['appointment_date'] . 'T' . $appt['appointment_time']);
-$gcStartFull = substr($gcStart, 0, 15) . '00Z'; // Simplificado
-$gcEnd       = date('Ymd\THis\Z', strtotime($appt['appointment_date'] . ' ' . $appt['appointment_time']) + 3600);
-$gcDetails   = urlencode('Link de acceso: ' . ($appt['meet_link'] ?? ''));
-$gcCal       = "https://calendar.google.com/calendar/render?action=TEMPLATE&text={$gcTitle}&dates={$gcStartFull}/{$gcEnd}&details={$gcDetails}";
+$gcTitle = urlencode("Reunión con " . BUSINESS_NAME);
+$gcLocation = urlencode(
+    "Google Meet (enlace enviado por WhatsApp el día de la reunión)",
+);
+$gcDetails = urlencode(
+    "Reunión agendada con " .
+        BUSINESS_NAME .
+        "\n" .
+        "El enlace de acceso a Google Meet te será enviado por WhatsApp el mismo día de la reunión." .
+        "\n\n" .
+        "Contacto: " .
+        BUSINESS_PHONE,
+);
+
+// Fechas en formato UTC para Google Calendar (YYYYMMDDTHHmmssZ)
+$apptTimestamp = strtotime(
+    $appt["appointment_date"] . " " . $appt["appointment_time"],
+);
+$gcStart = gmdate("Ymd\THis\Z", $apptTimestamp);
+$gcEnd = gmdate("Ymd\THis\Z", $apptTimestamp + 3600);
+
+$gcCal =
+    "https://calendar.google.com/calendar/render?action=TEMPLATE" .
+    "&text=" .
+    $gcTitle .
+    "&dates=" .
+    $gcStart .
+    "/" .
+    $gcEnd .
+    "&details=" .
+    $gcDetails .
+    "&location=" .
+    $gcLocation .
+    "&sf=true&output=xml";
 
 // Formatear fecha larga en español
-$ts       = strtotime($appt['appointment_date']);
-$dayName  = getDayName((int)date('w', $ts));
-$day      = date('j', $ts);
-$month    = getMonthName((int)date('n', $ts));
-$year     = date('Y', $ts);
+$ts = strtotime($appt["appointment_date"]);
+$dayName = getDayName((int) date("w", $ts));
+$day = date("j", $ts);
+$month = getMonthName((int) date("n", $ts));
+$year = date("Y", $ts);
 $longDate = "{$dayName}, {$day} de {$month} de {$year}";
-$time     = formatTime($appt['appointment_time']);
+$time = formatTime($appt["appointment_time"]);
 
 // Ocultar teléfono parcialmente
-$phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($appt['phone']) - 5)) . substr($appt['phone'], -2);
+$phoneMasked =
+    substr($appt["phone"], 0, 3) .
+    str_repeat("*", max(0, strlen($appt["phone"]) - 5)) .
+    substr($appt["phone"], -2);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -58,7 +93,7 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a237e 0%, #1565c0 100%);
+            background: linear-gradient(135deg, #1b3a2d 0%, #2d6a4f 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -77,7 +112,7 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
         /* Círculo check animado */
         .check-circle {
             width: 90px; height: 90px;
-            background: linear-gradient(135deg, #00bcd4, #1565c0);
+            background: linear-gradient(135deg, #2d6a4f, #c9a84c);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             margin: 0 auto 24px;
@@ -88,12 +123,12 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
             100% { transform: scale(1); opacity: 1; }
         }
         .check-circle svg { width: 46px; height: 46px; }
-        h1 { font-size: 1.75rem; font-weight: 700; color: #1a237e; margin-bottom: 8px; }
+        h1 { font-size: 1.75rem; font-weight: 700; color: #1b3a2d; margin-bottom: 8px; }
         .subtitle { color: #607d8b; font-size: .95rem; margin-bottom: 32px; }
 
         /* Detalles de la cita */
         .details {
-            background: #f0f7ff;
+            background: #f2f7f4;
             border-radius: 12px;
             padding: 20px;
             text-align: left;
@@ -104,7 +139,7 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
             align-items: center;
             gap: 12px;
             padding: 8px 0;
-            border-bottom: 1px solid #dde8f5;
+            border-bottom: 1px solid #e2ddd5;
             font-size: .9rem;
             color: #263238;
         }
@@ -124,9 +159,9 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
             margin-bottom: 16px;
         }
         .notice-wa {
-            background: #e3f2fd;
-            border-left: 4px solid #1565c0;
-            color: #0d47a1;
+            background: #dff0e8;
+            border-left: 4px solid #2d6a4f;
+            color: #1b3a2d;
         }
 
         /* Botones */
@@ -148,13 +183,13 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
         }
         .btn:active { transform: scale(.98); }
         .btn-meet {
-            background: linear-gradient(135deg, #1565c0, #00bcd4);
+            background: linear-gradient(135deg, #2d6a4f, #c9a84c);
             color: #fff;
         }
         .btn-gcal {
             background: #fff;
-            color: #1565c0;
-            border: 2px solid #1565c0;
+            color: #2d6a4f;
+            border: 2px solid #2d6a4f;
         }
         .btn:hover { opacity: .88; }
 
@@ -183,7 +218,9 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
     <div class="details">
         <div class="detail-row">
             <span class="icon">👤</span>
-            <div><strong>Nombre</strong><?= htmlspecialchars($appt['full_name']) ?></div>
+            <div><strong>Nombre</strong><?= htmlspecialchars(
+                $appt["full_name"],
+            ) ?></div>
         </div>
         <div class="detail-row">
             <span class="icon">📅</span>
@@ -193,12 +230,10 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
             <span class="icon">🕐</span>
             <div><strong>Hora</strong><?= $time ?></div>
         </div>
-        <?php if (!empty($appt['meet_link'])): ?>
         <div class="detail-row">
             <span class="icon">🎥</span>
-            <div><strong>Sala de reunión</strong>Google Meet (enlace enviado por WhatsApp)</div>
+            <div><strong>Acceso a la reunión</strong>El enlace de Google Meet se enviará por WhatsApp el día de la cita</div>
         </div>
-        <?php endif; ?>
     </div>
 
     <div class="notice notice-wa">
@@ -210,12 +245,7 @@ $phoneMasked = substr($appt['phone'], 0, 3) . str_repeat('*', max(0, strlen($app
         ✅ Si necesitas cancelar o cambiar tu cita, responde al mensaje de WhatsApp o contáctanos directamente.
     </div>
 
-    <?php if (!empty($appt['meet_link'])): ?>
-    <a href="<?= htmlspecialchars($appt['meet_link']) ?>" target="_blank" rel="noopener" class="btn btn-meet">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="15" height="10" rx="2"/><polygon points="17 9 22 5 22 19 17 15"/></svg>
-        Unirse a Google Meet
-    </a>
-    <?php endif; ?>
+
 
     <a href="<?= $gcCal ?>" target="_blank" rel="noopener" class="btn btn-gcal">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>

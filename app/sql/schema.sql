@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS `notification_logs` (
 INSERT INTO `admin_users` (`username`, `password`, `email`, `name`)
 VALUES (
     'admin',
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uJadRuJGi',
+    '$2y$10$/uwc24/bbwcu1GL1p7seTeU9amPimtI9SRV8LEwhZYlzG0daz2F7q',
     'admin@tudominio.com',
     'Administrador'
 );

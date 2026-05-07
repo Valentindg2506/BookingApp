@@ -8,8 +8,8 @@
  * (confirmación de reserva, recordatorio 1 día antes, recordatorio 2 horas antes).
  */
 
-if (!defined('TWILIO_ACCOUNT_SID')) {
-    require_once __DIR__ . '/../config.php';
+if (!defined("TWILIO_ACCOUNT_SID")) {
+    require_once __DIR__ . "/../config.php";
 }
 
 class WhatsApp
@@ -17,7 +17,7 @@ class WhatsApp
     // --------------------------------------------------------
     //  Constantes internas
     // --------------------------------------------------------
-    private const API_BASE = 'https://api.twilio.com/2010-04-01/Accounts';
+    private const API_BASE = "https://api.twilio.com/2010-04-01/Accounts";
 
     // --------------------------------------------------------
     //  Envío genérico
@@ -33,27 +33,29 @@ class WhatsApp
     public static function send(string $to, string $message): array
     {
         $accountSid = TWILIO_ACCOUNT_SID;
-        $authToken  = TWILIO_AUTH_TOKEN;
-        $from       = TWILIO_WHATSAPP_FROM;
+        $authToken = TWILIO_AUTH_TOKEN;
+        $from = TWILIO_WHATSAPP_FROM;
 
-        $url = sprintf('%s/%s/Messages.json', self::API_BASE, $accountSid);
+        $url = sprintf("%s/%s/Messages.json", self::API_BASE, $accountSid);
 
         $postFields = http_build_query([
-            'From' => $from,
-            'To'   => $to,
-            'Body' => $message,
+            "From" => $from,
+            "To" => $to,
+            "Body" => $message,
         ]);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL            => $url,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $postFields,
+            CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $postFields,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_USERPWD        => $accountSid . ':' . $authToken,
-            CURLOPT_HTTPAUTH       => CURLAUTH_BASIC,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_USERPWD => $accountSid . ":" . $authToken,
+            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: application/x-www-form-urlencoded",
+            ],
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
@@ -65,11 +67,11 @@ class WhatsApp
 
         // Error de red / cURL
         if ($response === false) {
-            error_log('[WhatsApp] cURL error: ' . $curlError);
+            error_log("[WhatsApp] cURL error: " . $curlError);
             return [
-                'success' => false,
-                'sid'     => null,
-                'error'   => 'Error de red: ' . $curlError,
+                "success" => false,
+                "sid" => null,
+                "error" => "Error de red: " . $curlError,
             ];
         }
 
@@ -77,19 +79,21 @@ class WhatsApp
 
         // Error HTTP de Twilio
         if ($httpCode < 200 || $httpCode >= 300) {
-            $errorMsg = $data['message'] ?? ('HTTP ' . $httpCode);
-            error_log('[WhatsApp] Twilio error (' . $httpCode . '): ' . $errorMsg);
+            $errorMsg = $data["message"] ?? "HTTP " . $httpCode;
+            error_log(
+                "[WhatsApp] Twilio error (" . $httpCode . "): " . $errorMsg,
+            );
             return [
-                'success' => false,
-                'sid'     => null,
-                'error'   => $errorMsg,
+                "success" => false,
+                "sid" => null,
+                "error" => $errorMsg,
             ];
         }
 
         return [
-            'success' => true,
-            'sid'     => $data['sid'] ?? null,
-            'error'   => null,
+            "success" => true,
+            "sid" => $data["sid"] ?? null,
+            "error" => null,
         ];
     }
 
@@ -112,17 +116,55 @@ class WhatsApp
         string $name,
         string $date,
         string $time,
-        string $businessName
+        string $businessName,
     ): array {
         $to = self::normalizeToWhatsApp($phone);
 
-        $message = "✅ *¡Reserva confirmada!*\n\n"
-            . "Hola {$name}, tu cita ha sido confirmada con éxito. 🎉\n\n"
-            . "📅 *Fecha:* {$date}\n"
-            . "🕐 *Hora:* {$time}\n"
-            . "🏢 *Lugar:* {$businessName}\n\n"
-            . "Si necesitas cancelar o modificar tu cita, por favor contáctanos con antelación.\n\n"
-            . "¡Te esperamos! 😊";
+        $message =
+            "✅ *¡Reserva confirmada!*\n\n" .
+            "Hola {$name}, tu cita ha sido confirmada con éxito. 🎉\n\n" .
+            "📅 *Fecha:* {$date}\n" .
+            "🕐 *Hora:* {$time}\n" .
+            "🏢 *Lugar:* {$businessName}\n\n" .
+            "Si necesitas cancelar o modificar tu cita, por favor contáctanos con antelación.\n\n" .
+            "¡Te esperamos! 😊";
+
+        return self::send($to, $message);
+    }
+
+    /**
+     * Envía una notificación de cancelación de cita al cliente.
+     *
+     * @param  string $phone        Número del cliente.
+     * @param  string $name         Nombre del cliente.
+     * @param  string $date         Fecha de la cita.
+     * @param  string $time         Hora de la cita.
+     * @param  string $businessName Nombre del negocio.
+     * @param  string $businessPhone Teléfono de contacto del negocio.
+     * @return array{success: bool, sid: string|null, error: string|null}
+     */
+    public static function sendCancellation(
+        string $phone,
+        string $name,
+        string $date,
+        string $time,
+        string $businessName,
+        string $businessPhone = "",
+    ): array {
+        $to = self::normalizeToWhatsApp($phone);
+
+        $contactLine = !empty($businessPhone)
+            ? "Si deseas reagendar o tienes alguna consulta, no dudes en contactarnos al {$businessPhone}.\n\n"
+            : "Si deseas reagendar o tienes alguna consulta, no dudes en contactarnos.\n\n";
+
+        $message =
+            "❌ *Cita cancelada*\n\n" .
+            "Hola {$name}, te informamos que tu cita ha sido cancelada. Lamentamos los inconvenientes que esto pueda ocasionarte.\n\n" .
+            "📅 *Fecha:* {$date}\n" .
+            "🕐 *Hora:* {$time}\n" .
+            "🏢 *{$businessName}*\n\n" .
+            $contactLine .
+            "Gracias por tu comprensión. 🙏";
 
         return self::send($to, $message);
     }
@@ -142,17 +184,18 @@ class WhatsApp
         string $name,
         string $date,
         string $time,
-        string $businessName
+        string $businessName,
     ): array {
         $to = self::normalizeToWhatsApp($phone);
 
-        $message = "🔔 *Recordatorio de cita*\n\n"
-            . "Hola {$name}, te recordamos que *mañana* tienes una cita con nosotros. 📆\n\n"
-            . "📅 *Fecha:* {$date}\n"
-            . "🕐 *Hora:* {$time}\n"
-            . "🏢 *{$businessName}*\n\n"
-            . "Por favor, llega unos minutos antes para que podamos atenderte con puntualidad. ⏰\n\n"
-            . "Si necesitas cancelar, avísanos con la mayor antelación posible. ¡Gracias! 🙏";
+        $message =
+            "🔔 *Recordatorio de cita*\n\n" .
+            "Hola {$name}, te recordamos que *mañana* tienes una cita con nosotros. 📆\n\n" .
+            "📅 *Fecha:* {$date}\n" .
+            "🕐 *Hora:* {$time}\n" .
+            "🏢 *{$businessName}*\n\n" .
+            "Por favor, llega unos minutos antes para que podamos atenderte con puntualidad. ⏰\n\n" .
+            "Si necesitas cancelar, avísanos con la mayor antelación posible. ¡Gracias! 🙏";
 
         return self::send($to, $message);
     }
@@ -174,18 +217,19 @@ class WhatsApp
         string $date,
         string $time,
         string $businessName,
-        string $meetLink
+        string $meetLink,
     ): array {
         $to = self::normalizeToWhatsApp($phone);
 
-        $message = "⏰ *¡Tu cita es en 2 horas!*\n\n"
-            . "Hola {$name}, en breve comenzará tu cita con *{$businessName}*. 🚀\n\n"
-            . "📅 *Fecha:* {$date}\n"
-            . "🕐 *Hora:* {$time}\n\n"
-            . "🎥 *Únete a la videollamada aquí:*\n"
-            . "{$meetLink}\n\n"
-            . "Asegúrate de tener buena conexión a internet y un lugar tranquilo. 💻\n\n"
-            . "¡Nos vemos pronto! 👋";
+        $message =
+            "⏰ *¡Tu cita es en 2 horas!*\n\n" .
+            "Hola {$name}, en breve comenzará tu cita con *{$businessName}*. 🚀\n\n" .
+            "📅 *Fecha:* {$date}\n" .
+            "🕐 *Hora:* {$time}\n\n" .
+            "🎥 *Únete a la videollamada aquí:*\n" .
+            "{$meetLink}\n\n" .
+            "Asegúrate de tener buena conexión a internet y un lugar tranquilo. 💻\n\n" .
+            "¡Nos vemos pronto! 👋";
 
         return self::send($to, $message);
     }
@@ -204,20 +248,20 @@ class WhatsApp
     {
         $phone = trim($phone);
 
-        if (str_starts_with($phone, 'whatsapp:')) {
+        if (str_starts_with($phone, "whatsapp:")) {
             return $phone;
         }
 
         // Asegurarse de que tenga + para el formato internacional
-        if (!str_starts_with($phone, '+')) {
+        if (!str_starts_with($phone, "+")) {
             // Si es número español sin prefijo (9 dígitos, empieza por 6, 7 o 9)
             if (preg_match('/^[679]\d{8}$/', $phone)) {
-                $phone = '+34' . $phone;
+                $phone = "+34" . $phone;
             } else {
-                $phone = '+' . $phone;
+                $phone = "+" . $phone;
             }
         }
 
-        return 'whatsapp:' . $phone;
+        return "whatsapp:" . $phone;
     }
 }
