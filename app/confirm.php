@@ -238,7 +238,7 @@ $phoneMasked =
 
     <div class="notice notice-wa">
         📱 Hemos enviado la confirmación por WhatsApp al número <strong><?= $phoneMasked ?></strong>.<br>
-        Recibirás recordatorios <strong>1 día antes</strong> y <strong>2 horas antes</strong> con el link de acceso.
+        Recibirás recordatorios <strong>1 día antes</strong> y el enlace de acceso <strong>1 hora antes</strong> de tu cita.
     </div>
 
     <div class="notice">

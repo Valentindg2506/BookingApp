@@ -32,9 +32,21 @@ class WhatsApp
      */
     public static function send(string $to, string $message): array
     {
-        $accountSid = TWILIO_ACCOUNT_SID;
-        $authToken = TWILIO_AUTH_TOKEN;
-        $from = TWILIO_WHATSAPP_FROM;
+        $accountSid =
+            class_exists("Settings") &&
+            Settings::get("twilio_account_sid") !== ""
+                ? Settings::get("twilio_account_sid")
+                : TWILIO_ACCOUNT_SID;
+        $authToken =
+            class_exists("Settings") &&
+            Settings::get("twilio_auth_token") !== ""
+                ? Settings::get("twilio_auth_token")
+                : TWILIO_AUTH_TOKEN;
+        $from =
+            class_exists("Settings") &&
+            Settings::get("twilio_whatsapp_from") !== ""
+                ? Settings::get("twilio_whatsapp_from")
+                : TWILIO_WHATSAPP_FROM;
 
         $url = sprintf("%s/%s/Messages.json", self::API_BASE, $accountSid);
 
@@ -201,7 +213,7 @@ class WhatsApp
     }
 
     /**
-     * Envía un recordatorio 2 horas antes de la cita con el enlace de Google Meet.
+     * Envía un recordatorio 1 hora antes de la cita con el enlace de Google Meet.
      *
      * @param  string $phone        Número del cliente.
      * @param  string $name         Nombre del cliente.
@@ -211,7 +223,7 @@ class WhatsApp
      * @param  string $meetLink     Enlace de Google Meet.
      * @return array{success: bool, sid: string|null, error: string|null}
      */
-    public static function sendReminder2Hours(
+    public static function sendReminder1Hour(
         string $phone,
         string $name,
         string $date,
@@ -222,14 +234,33 @@ class WhatsApp
         $to = self::normalizeToWhatsApp($phone);
 
         $message =
-            "⏰ *¡Tu cita es en 2 horas!*\n\n" .
-            "Hola {$name}, en breve comenzará tu cita con *{$businessName}*. 🚀\n\n" .
+            "⏰ *¡Tu cita es en 1 hora!*\n\n" .
+            "Hola {$name}, en breve comenzará tu reunión con *{$businessName}*. 🚀\n\n" .
             "📅 *Fecha:* {$date}\n" .
             "🕐 *Hora:* {$time}\n\n" .
-            "🎥 *Únete a la videollamada aquí:*\n" .
+            "🎥 *Accede a la videollamada aquí:*\n" .
             "{$meetLink}\n\n" .
-            "Asegúrate de tener buena conexión a internet y un lugar tranquilo. 💻\n\n" .
+            "Asegúrate de tener buena conexión y un lugar tranquilo. 💻\n\n" .
             "¡Nos vemos pronto! 👋";
+
+        return self::send($to, $message);
+    }
+
+    public static function sendReminder15Min(
+        string $phone,
+        string $name,
+        string $time,
+        string $businessName,
+        string $meetLink,
+    ): array {
+        $to = self::normalizeToWhatsApp($phone);
+
+        $message =
+            "🔴 *¡Tu reunión comienza en 15 minutos!*\n\n" .
+            "Hola {$name}, tu cita con *{$businessName}* empieza a las *{$time}*.\n\n" .
+            "🎥 *Únete ahora:*\n" .
+            "{$meetLink}\n\n" .
+            "¡Te esperamos! 💼";
 
         return self::send($to, $message);
     }

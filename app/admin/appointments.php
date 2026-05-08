@@ -72,6 +72,71 @@ if (
     }
 }
 
+// ---- Acción: Exportar CSV ----
+if (isset($_GET["export"]) && $_GET["export"] === "csv") {
+    $exportStmt = $pdo->prepare(
+        "SELECT id, full_name, email, phone, appointment_date, appointment_time,
+                status, meet_link, confirmation_sent, reminder_1day_sent,
+                reminder_2hours_sent, reminder_15min_sent, created_at
+         FROM appointments ORDER BY appointment_date DESC, appointment_time DESC",
+    );
+    $exportStmt->execute();
+    $rows = $exportStmt->fetchAll();
+
+    header("Content-Type: text/csv; charset=UTF-8");
+    header(
+        'Content-Disposition: attachment; filename="citas_' .
+            date("Y-m-d") .
+            '.csv"',
+    );
+    header("Cache-Control: no-cache");
+
+    $out = fopen("php://output", "w");
+    fprintf($out, chr(0xef) . chr(0xbb) . chr(0xbf)); // BOM UTF-8
+    fputcsv(
+        $out,
+        [
+            "ID",
+            "Nombre",
+            "Email",
+            "Teléfono",
+            "Fecha",
+            "Hora",
+            "Estado",
+            "Meet Link",
+            "Conf.Enviada",
+            "Rec.1día",
+            "Rec.1h",
+            "Rec.15min",
+            "Creada",
+        ],
+        ";",
+    );
+    foreach ($rows as $r) {
+        fputcsv(
+            $out,
+            [
+                $r["id"],
+                $r["full_name"],
+                $r["email"],
+                $r["phone"],
+                $r["appointment_date"],
+                $r["appointment_time"],
+                $r["status"],
+                $r["meet_link"] ?? "",
+                $r["confirmation_sent"] ? "Sí" : "No",
+                $r["reminder_1day_sent"] ? "Sí" : "No",
+                $r["reminder_2hours_sent"] ? "Sí" : "No",
+                $r["reminder_15min_sent"] ? "Sí" : "No",
+                $r["created_at"],
+            ],
+            ";",
+        );
+    }
+    fclose($out);
+    exit();
+}
+
 // ---- Filtros ----
 $filterStatus = $_GET["status"] ?? "";
 $filterDate = $_GET["date"] ?? "";
@@ -138,6 +203,10 @@ $appointments = $listStmt->fetchAll();
             <p><?= $totalRows ?> cita<?= $totalRows !== 1
      ? "s"
      : "" ?> encontrada<?= $totalRows !== 1 ? "s" : "" ?></p>
+            <a href="appointments.php?export=csv" class="btn btn-secondary" style="margin-top:8px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar CSV
+            </a>
         </div>
 
         <?php if ($msg): ?>

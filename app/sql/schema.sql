@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `appointments` (
     `notes`                 TEXT                DEFAULT NULL,
     `reminder_1day_sent`    TINYINT(1)          NOT NULL DEFAULT 0,
     `reminder_2hours_sent`  TINYINT(1)          NOT NULL DEFAULT 0,
+    `reminder_15min_sent`   TINYINT(1)          NOT NULL DEFAULT 0,
     `confirmation_sent`     TINYINT(1)          NOT NULL DEFAULT 0,
     `created_at`            DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`            DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -188,5 +189,39 @@ VALUES
     (3, '09:00:00', '18:00:00', 30, 1),  -- Miércoles
     (4, '09:00:00', '18:00:00', 30, 1),  -- Jueves
     (5, '09:00:00', '18:00:00', 30, 1);  -- Viernes
+
+-- ------------------------------------------------------------
+--  Tabla: app_settings
+--  Configuración dinámica de la aplicación
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `app_settings` (
+    `key`        VARCHAR(100)  NOT NULL,
+    `value`      TEXT          DEFAULT NULL,
+    `group`      VARCHAR(50)   NOT NULL DEFAULT 'general',
+    `updated_at` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`key`),
+    KEY `idx_group` (`group`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='Configuración dinámica de la aplicación';
+
+INSERT INTO `app_settings` (`key`, `value`, `group`) VALUES
+('app_name',               'BookingApp',           'business'),
+('business_name',          'Tu Empresa',            'business'),
+('business_phone',         '+34600000000',          'business'),
+('business_email',         'info@tudominio.com',    'business'),
+('app_url',                'https://tudominio.com/app', 'business'),
+('meta_verify_token',      '',  'meta'),
+('meta_app_secret',        '',  'meta'),
+('meta_page_access_token', '',  'meta'),
+('google_client_id',       '',  'google'),
+('google_client_secret',   '',  'google'),
+('google_calendar_id',     'primary', 'google'),
+('twilio_account_sid',     '',  'twilio'),
+('twilio_auth_token',      '',  'twilio'),
+('twilio_whatsapp_from',   'whatsapp:+14155238886', 'twilio'),
+('admin_whatsapp',         'whatsapp:+34600000000', 'twilio'),
+('cron_secret_key',        'CAMBIA_ESTA_CLAVE',     'system');
 
 SET foreign_key_checks = 1;

@@ -9,8 +9,8 @@
  * sin dependencias externas adicionales.
  */
 
-if (!defined('GOOGLE_CLIENT_ID')) {
-    require_once __DIR__ . '/../config.php';
+if (!defined("GOOGLE_CLIENT_ID")) {
+    require_once __DIR__ . "/../config.php";
 }
 
 class GoogleMeet
@@ -18,8 +18,8 @@ class GoogleMeet
     // --------------------------------------------------------
     //  Constantes de la API de Google
     // --------------------------------------------------------
-    private const TOKEN_URL    = 'https://oauth2.googleapis.com/token';
-    private const CALENDAR_URL = 'https://www.googleapis.com/calendar/v3/calendars';
+    private const TOKEN_URL = "https://oauth2.googleapis.com/token";
+    private const CALENDAR_URL = "https://www.googleapis.com/calendar/v3/calendars";
 
     // --------------------------------------------------------
     //  Gestión de tokens OAuth 2.0
@@ -37,27 +37,33 @@ class GoogleMeet
         $tokensFile = GOOGLE_TOKENS_FILE;
 
         if (!file_exists($tokensFile)) {
-            error_log('[GoogleMeet] Fichero de tokens no encontrado: ' . $tokensFile);
+            error_log(
+                "[GoogleMeet] Fichero de tokens no encontrado: " . $tokensFile,
+            );
             return null;
         }
 
-        $json   = file_get_contents($tokensFile);
+        $json = file_get_contents($tokensFile);
         $tokens = json_decode($json, true);
 
-        if (empty($tokens['access_token'])) {
-            error_log('[GoogleMeet] access_token no encontrado en el fichero de tokens.');
+        if (empty($tokens["access_token"])) {
+            error_log(
+                "[GoogleMeet] access_token no encontrado en el fichero de tokens.",
+            );
             return null;
         }
 
         // Comprobar si el access token ha expirado (con 60 s de margen)
-        $expiresAt = $tokens['expires_at'] ?? 0;
-        if (time() >= ($expiresAt - 60)) {
-            if (empty($tokens['refresh_token'])) {
-                error_log('[GoogleMeet] Access token expirado y no hay refresh_token.');
+        $expiresAt = $tokens["expires_at"] ?? 0;
+        if (time() >= $expiresAt - 60) {
+            if (empty($tokens["refresh_token"])) {
+                error_log(
+                    "[GoogleMeet] Access token expirado y no hay refresh_token.",
+                );
                 return null;
             }
 
-            $newTokens = $this->refreshAccessToken($tokens['refresh_token']);
+            $newTokens = $this->refreshAccessToken($tokens["refresh_token"]);
             if ($newTokens === null) {
                 return null;
             }
@@ -67,7 +73,7 @@ class GoogleMeet
             $this->saveTokens($tokens);
         }
 
-        return $tokens['access_token'];
+        return $tokens["access_token"];
     }
 
     /**
@@ -79,43 +85,60 @@ class GoogleMeet
     public function refreshAccessToken(string $refreshToken): ?array
     {
         $postFields = http_build_query([
-            'client_id'     => GOOGLE_CLIENT_ID,
-            'client_secret' => GOOGLE_CLIENT_SECRET,
-            'refresh_token' => $refreshToken,
-            'grant_type'    => 'refresh_token',
+            "client_id" =>
+                class_exists("Settings") &&
+                Settings::get("google_client_id") !== ""
+                    ? Settings::get("google_client_id")
+                    : GOOGLE_CLIENT_ID,
+            "client_secret" =>
+                class_exists("Settings") &&
+                Settings::get("google_client_secret") !== ""
+                    ? Settings::get("google_client_secret")
+                    : GOOGLE_CLIENT_SECRET,
+            "refresh_token" => $refreshToken,
+            "grant_type" => "refresh_token",
         ]);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL            => self::TOKEN_URL,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $postFields,
+            CURLOPT_URL => self::TOKEN_URL,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $postFields,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_TIMEOUT => 15,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: application/x-www-form-urlencoded",
+            ],
         ]);
 
-        $response  = curl_exec($ch);
-        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            error_log('[GoogleMeet] cURL error al refrescar token: ' . $curlError);
+            error_log(
+                "[GoogleMeet] cURL error al refrescar token: " . $curlError,
+            );
             return null;
         }
 
         $data = json_decode($response, true);
 
-        if ($httpCode !== 200 || empty($data['access_token'])) {
-            error_log('[GoogleMeet] Error al refrescar token (' . $httpCode . '): ' . $response);
+        if ($httpCode !== 200 || empty($data["access_token"])) {
+            error_log(
+                "[GoogleMeet] Error al refrescar token (" .
+                    $httpCode .
+                    "): " .
+                    $response,
+            );
             return null;
         }
 
         // Calcular el timestamp de expiración
-        $data['expires_at'] = time() + (int) ($data['expires_in'] ?? 3600);
+        $data["expires_at"] = time() + (int) ($data["expires_in"] ?? 3600);
 
         return $data;
     }
@@ -139,105 +162,126 @@ class GoogleMeet
         string $description,
         string $dateTime,
         int $durationMinutes = 60,
-        ?string $attendeeEmail = null
+        ?string $attendeeEmail = null,
     ): string {
         $accessToken = $this->getAccessToken();
 
         if ($accessToken === null) {
-            error_log('[GoogleMeet] Sin access token; se usa enlace de placeholder.');
+            error_log(
+                "[GoogleMeet] Sin access token; se usa enlace de placeholder.",
+            );
             return $this->generatePlaceholderLink();
         }
 
         // Calcular hora de fin
         $startTimestamp = strtotime($dateTime);
         if ($startTimestamp === false) {
-            error_log('[GoogleMeet] Formato de fecha/hora inválido: ' . $dateTime);
+            error_log(
+                "[GoogleMeet] Formato de fecha/hora inválido: " . $dateTime,
+            );
             return $this->generatePlaceholderLink();
         }
 
-        $endTimestamp = $startTimestamp + ($durationMinutes * 60);
-        $timezone     = defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Europe/Madrid';
+        $endTimestamp = $startTimestamp + $durationMinutes * 60;
+        $timezone = defined("APP_TIMEZONE") ? APP_TIMEZONE : "Europe/Madrid";
 
-        $startIso = date('c', $startTimestamp);  // ISO 8601 con offset de la TZ local
-        $endIso   = date('c', $endTimestamp);
+        $startIso = date("c", $startTimestamp); // ISO 8601 con offset de la TZ local
+        $endIso = date("c", $endTimestamp);
 
         // Construir el cuerpo del evento
         $requestId = substr(md5(uniqid((string) mt_rand(), true)), 0, 16);
 
         $eventBody = [
-            'summary'     => $summary,
-            'description' => $description,
-            'start'       => [
-                'dateTime' => $startIso,
-                'timeZone' => $timezone,
+            "summary" => $summary,
+            "description" => $description,
+            "start" => [
+                "dateTime" => $startIso,
+                "timeZone" => $timezone,
             ],
-            'end'         => [
-                'dateTime' => $endIso,
-                'timeZone' => $timezone,
+            "end" => [
+                "dateTime" => $endIso,
+                "timeZone" => $timezone,
             ],
-            'conferenceData' => [
-                'createRequest' => [
-                    'requestId'             => $requestId,
-                    'conferenceSolutionKey' => ['type' => 'hangoutsMeet'],
+            "conferenceData" => [
+                "createRequest" => [
+                    "requestId" => $requestId,
+                    "conferenceSolutionKey" => ["type" => "hangoutsMeet"],
                 ],
             ],
         ];
 
         // Añadir asistente si se proporcionó email
-        if ($attendeeEmail !== null && filter_var($attendeeEmail, FILTER_VALIDATE_EMAIL)) {
-            $eventBody['attendees'] = [['email' => $attendeeEmail]];
+        if (
+            $attendeeEmail !== null &&
+            filter_var($attendeeEmail, FILTER_VALIDATE_EMAIL)
+        ) {
+            $eventBody["attendees"] = [["email" => $attendeeEmail]];
         }
 
-        $calendarId = defined('GOOGLE_CALENDAR_ID') ? GOOGLE_CALENDAR_ID : 'primary';
-        $url        = sprintf(
-            '%s/%s/events?conferenceDataVersion=1&sendUpdates=none',
+        $calendarId =
+            class_exists("Settings") &&
+            Settings::get("google_calendar_id") !== ""
+                ? Settings::get("google_calendar_id")
+                : (defined("GOOGLE_CALENDAR_ID")
+                    ? GOOGLE_CALENDAR_ID
+                    : "primary");
+        $url = sprintf(
+            "%s/%s/events?conferenceDataVersion=1&sendUpdates=none",
             self::CALENDAR_URL,
-            urlencode($calendarId)
+            urlencode($calendarId),
         );
 
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL            => $url,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => json_encode($eventBody),
+            CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($eventBody),
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Bearer ' . $accessToken,
-                'Content-Type: application/json',
-                'Accept: application/json',
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer " . $accessToken,
+                "Content-Type: application/json",
+                "Accept: application/json",
             ],
         ]);
 
-        $response  = curl_exec($ch);
-        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            error_log('[GoogleMeet] cURL error al crear evento: ' . $curlError);
+            error_log("[GoogleMeet] cURL error al crear evento: " . $curlError);
             return $this->generatePlaceholderLink();
         }
 
         $data = json_decode($response, true);
 
         if ($httpCode < 200 || $httpCode >= 300) {
-            error_log('[GoogleMeet] Error al crear evento (' . $httpCode . '): ' . $response);
+            error_log(
+                "[GoogleMeet] Error al crear evento (" .
+                    $httpCode .
+                    "): " .
+                    $response,
+            );
             return $this->generatePlaceholderLink();
         }
 
         // Extraer el hangoutLink del evento creado
-        $meetLink = $data['hangoutLink'] ?? null;
+        $meetLink = $data["hangoutLink"] ?? null;
 
         if (empty($meetLink)) {
             // Intentar extraer de conferenceData
-            $meetLink = $data['conferenceData']['entryPoints'][0]['uri'] ?? null;
+            $meetLink =
+                $data["conferenceData"]["entryPoints"][0]["uri"] ?? null;
         }
 
         if (empty($meetLink)) {
-            error_log('[GoogleMeet] Evento creado pero sin hangoutLink. Usando placeholder.');
+            error_log(
+                "[GoogleMeet] Evento creado pero sin hangoutLink. Usando placeholder.",
+            );
             return $this->generatePlaceholderLink();
         }
 
@@ -257,7 +301,7 @@ class GoogleMeet
     private function saveTokens(array $tokens): void
     {
         $tokensFile = GOOGLE_TOKENS_FILE;
-        $dir        = dirname($tokensFile);
+        $dir = dirname($tokensFile);
 
         if (!is_dir($dir)) {
             mkdir($dir, 0750, true);
@@ -266,7 +310,7 @@ class GoogleMeet
         file_put_contents(
             $tokensFile,
             json_encode($tokens, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-            LOCK_EX
+            LOCK_EX,
         );
     }
 
@@ -287,6 +331,11 @@ class GoogleMeet
         $part2 = substr($hash, 3, 4);
         $part3 = substr($hash, 7, 3);
 
-        return 'https://meet.google.com/' . $part1 . '-' . $part2 . '-' . $part3;
+        return "https://meet.google.com/" .
+            $part1 .
+            "-" .
+            $part2 .
+            "-" .
+            $part3;
     }
 }
