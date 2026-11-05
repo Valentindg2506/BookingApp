@@ -129,17 +129,6 @@ booking-app/
 
 ---
 
-## 📋 Requisitos del sistema
-
-- **PHP** 8.1 o superior
-- **MySQL** 8.0+ / MariaDB 10.5+
-- **Extensiones PHP:** `pdo_mysql`, `curl`, `json`, `openssl`
-- **Servidor web:** Apache o Nginx con `.htaccess` / rewrite habilitado
-- Acceso a **cron jobs** (para los recordatorios automáticos)
-- Conexión a internet (para APIs de Twilio, Google y Meta)
-
----
-
 ## 🔌 Integraciones externas
 
 | Servicio | Uso | Coste |
@@ -159,20 +148,6 @@ booking-app/
 
 ### Panel de administración
 > Dashboard con KPIs, tabla de citas con filtros, gestión de disponibilidad por día de la semana con toggles, historial completo de notificaciones WhatsApp
-
----
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Haz un fork del repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Haz commit de tus cambios (`git commit -m 'Añade nueva funcionalidad'`)
-4. Sube la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
-
-Por favor, sigue el estilo de código existente y documenta los cambios relevantes.
 
 ---
 
